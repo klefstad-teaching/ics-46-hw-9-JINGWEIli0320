@@ -44,94 +44,107 @@ bool is_adjacent(const std::string& word1, const std::string& word2) {
 }
 
 
-vector<string> generate_word_ladder(const string& begin_word, const string& end_word, const set<string>& word_list) {
+vector<string> generate_word_ladder(const string& begin_word, 
+    const string& end_word, 
+    const set<string>& word_list) 
+{
+    
+
     if (begin_word == end_word) {
-        error(begin_word, end_word, "Start and end words are the same!");
+
+        error(begin_word, end_word, "Initial and final words must differ!");
         return {};
-    }
-    
-    if (word_list.find(end_word) == word_list.end()) {
-        error(begin_word, end_word, "End word is not in the dictionary!");
-        return {};
-    }
-    
-    
-    auto compare = [](const vector<string>& a, const vector<string>& b) {
-        if (a.size() != b.size()) {
-            return a.size() > b.size(); 
-        }
-        return a.back() > b.back(); 
-    };
-    
-    priority_queue<vector<string>, vector<vector<string>>, decltype(compare)> ladder_queue(compare);
-    ladder_queue.push({begin_word});
-    
-    set<string> visited;
-    visited.insert(begin_word);
-    
-    const int MAX_LADDER_LENGTH = 20;
-    
-    while (!ladder_queue.empty()) {
-        vector<string> ladder = ladder_queue.top();
-        ladder_queue.pop();
-        
-        if (ladder.size() > MAX_LADDER_LENGTH) {
-            continue;
-        }
-        
-        string last_word = ladder.back();
-        
-        if (last_word == end_word) {
-            return ladder;
-        }
-        
-       
-        for (size_t i = 0; i < last_word.length(); i++) {
-            string new_word = last_word;
-            for (char c = 'a'; c <= 'z'; c++) {
-                new_word[i] = c;
-                if (word_list.find(new_word) != word_list.end() && visited.find(new_word) == visited.end()) {
-                    visited.insert(new_word);
-                    vector<string> new_ladder = ladder;
-                    new_ladder.push_back(new_word);
-                    
-                    ladder_queue.push(new_ladder);
-                }
-            }
-        }
-        
-      
-        for (size_t i = 0; i <= last_word.length(); i++) {
-            for (char c = 'a'; c <= 'z'; c++) {
-                string new_word = last_word;
-                new_word.insert(i, 1, c);  
-                if (word_list.find(new_word) != word_list.end() && visited.find(new_word) == visited.end()) {
-                    visited.insert(new_word);
-                    vector<string> new_ladder = ladder;
-                    new_ladder.push_back(new_word);
-                    
-                    ladder_queue.push(new_ladder);
-                }
-            }
-        }
-        
-        // Delete one character at a time
-        for (size_t i = 0; i < last_word.length(); i++) {
-            string new_word = last_word;
-            new_word.erase(i, 1);
-            if (word_list.find(new_word) != word_list.end() && visited.find(new_word) == visited.end()) {
-                visited.insert(new_word);
-                vector<string> new_ladder = ladder;
-                new_ladder.push_back(new_word);
-                
-                ladder_queue.push(new_ladder);
-            }
-        }
-    }
-    
-    error(begin_word, end_word, "No word ladder exists between these words!");
-    return {};
 }
+
+
+    if (!word_list.count(end_word)) {
+        error(begin_word, end_word, "Destination word not found in dictionary!");
+        return {};
+}
+
+
+    auto priorityComparator = [](const vector<string>& pathA, const vector<string>& pathB) {
+
+        if (pathA.size() != pathB.size()) {
+        return pathA.size() > pathB.size();
+    }
+    return pathA.back() > pathB.back();
+};
+
+
+    priority_queue<vector<string>, vector<vector<string>>, decltype(priorityComparator)> pathsQueue(priorityComparator);
+    pathsQueue.push({ begin_word });
+
+
+   set<string> usedWords;
+   usedWords.insert(begin_word);
+
+
+   const int MAX_PATH_LENGTH = 20;
+
+
+while (!pathsQueue.empty()) {
+vector<string> currentPath = pathsQueue.top();
+pathsQueue.pop();
+
+
+if (static_cast<int>(currentPath.size()) > MAX_PATH_LENGTH) {
+continue;
+}
+
+
+const string& currentWord = currentPath.back();
+
+if (currentWord == end_word) {
+return currentPath;
+}
+
+
+for (size_t i = 0; i < currentWord.size(); i++) {
+string candidateWord = currentWord;
+for (char ch = 'a'; ch <= 'z'; ch++) {
+candidateWord[i] = ch;
+if (word_list.count(candidateWord) && !usedWords.count(candidateWord)) {
+usedWords.insert(candidateWord);
+vector<string> nextPath = currentPath;
+nextPath.push_back(candidateWord);
+pathsQueue.push(nextPath);
+}
+}
+}
+
+
+for (size_t i = 0; i <= currentWord.size(); i++) {
+for (char ch = 'a'; ch <= 'z'; ch++) {
+string candidateWord = currentWord;
+candidateWord.insert(candidateWord.begin() + i, ch);
+if (word_list.count(candidateWord) && !usedWords.count(candidateWord)) {
+usedWords.insert(candidateWord);
+vector<string> nextPath = currentPath;
+nextPath.push_back(candidateWord);
+pathsQueue.push(nextPath);
+}
+}
+}
+
+
+for (size_t i = 0; i < currentWord.size(); i++) {
+string candidateWord = currentWord;
+candidateWord.erase(candidateWord.begin() + i);
+if (word_list.count(candidateWord) && !usedWords.count(candidateWord)) {
+usedWords.insert(candidateWord);
+vector<string> nextPath = currentPath;
+nextPath.push_back(candidateWord);
+pathsQueue.push(nextPath);
+}
+}
+}
+
+
+error(begin_word, end_word, "No valid word ladder could be formed!");
+return {};
+}
+
 
 void load_words(set<string>& word_list, const string& file_name) {
     std::ifstream in(file_name);
@@ -152,6 +165,7 @@ void print_word_ladder(const vector<string>& ladder) {
         std::cout << "No word ladder found." << std::endl;
         return;
     }
+    std::cout << "Word ladder found ";
     for (size_t i = 0; i < ladder.size(); i++) {
         std::cout << ladder[i];
         if (i != ladder.size() - 1)
