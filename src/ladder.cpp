@@ -44,49 +44,96 @@ bool is_adjacent(const std::string& word1, const std::string& word2) {
 }
 
 
-vector<string> generate_word_ladder(const string& begin_word, const string& end_word, const set<string>& word_list) {
+vector<string> generate_word_ladder(const string& begin_word,
+    const string& end_word,
+    const set<string>& word_list) 
+{
 
-    if (begin_word == end_word)
-        return {};
-
-
-    set<string> words = word_list;
-    words.insert(begin_word);
-    words.insert(end_word);
-
-    queue<vector<string>> q;
-    set<string> visited;
-    q.push({ begin_word });
-    visited.insert(begin_word);
-
-    while (!q.empty()) {
-        int levelSize = q.size();
-        set<string> levelVisited;
-        for (int i = 0; i < levelSize; i++) {
-            vector<string> path = q.front();
-            q.pop();
-            string last = path.back();
-            if (last == end_word) {
-                return path;
-            }
-
-            for (const auto& word : words) {
-                if (visited.find(word) == visited.end() && is_adjacent(last, word)) {
-                    vector<string> new_path = path;
-                    new_path.push_back(word);
-                    levelVisited.insert(word);
-                    q.push(new_path);
-                }
-            }
-        }
-
-        for (const auto& w : levelVisited) {
-            visited.insert(w);
-        }
-    }
-    return {}; 
+  if (begin_word == end_word) {
+  error(begin_word, end_word, "Start and end words are the same!");
+  return {};
 }
 
+  if (word_list.find(end_word) == word_list.end()) {
+  error(begin_word, end_word, "End word is not in the dictionary!");
+  return {};
+}
+
+queue<vector<string>> q;
+q.push({ begin_word });
+
+
+set<string> visited;
+visited.insert(begin_word);
+
+
+const int MAX_LADDER_LENGTH = 20;
+
+while (!q.empty()) {
+vector<string> ladder = q.front();
+q.pop();
+
+
+if ((int)ladder.size() > MAX_LADDER_LENGTH) {
+continue;
+}
+
+
+string last_word = ladder.back();
+
+
+if (last_word == end_word) {
+return ladder;
+}
+
+
+for (size_t i = 0; i < last_word.size(); i++) {
+string new_word = last_word;
+for (char c = 'a'; c <= 'z'; c++) {
+char old = new_word[i];
+if (c == old) continue; 
+new_word[i] = c;
+if (word_list.find(new_word) != word_list.end() && !visited.count(new_word)) {
+visited.insert(new_word);
+vector<string> new_ladder = ladder;
+new_ladder.push_back(new_word);
+q.push(new_ladder);
+}
+new_word[i] = old; 
+}
+
+
+for (size_t i = 0; i <= last_word.size(); i++) {
+for (char c = 'a'; c <= 'z'; c++) {
+string new_word = last_word;
+new_word.insert(new_word.begin() + i, c);
+if (word_list.find(new_word) != word_list.end() && !visited.count(new_word)) {
+visited.insert(new_word);
+vector<string> new_ladder = ladder;
+new_ladder.push_back(new_word);
+q.push(new_ladder);
+}
+}
+}
+
+
+for (size_t i = 0; i < last_word.size(); i++) {
+string new_word = last_word;
+new_word.erase(new_word.begin() + i);
+if (word_list.find(new_word) != word_list.end() && !visited.count(new_word)) {
+visited.insert(new_word);
+vector<string> new_ladder = ladder;
+new_ladder.push_back(new_word);
+q.push(new_ladder);
+}
+}
+}
+
+
+error(begin_word, end_word, "No word ladder exists between these words!");
+return {};
+}
+}
 
 void load_words(set<string>& word_list, const string& file_name) {
     std::ifstream in(file_name);
@@ -112,7 +159,7 @@ void print_word_ladder(const vector<string>& ladder) {
         if (i != ladder.size() - 1)
             std::cout << " ";
     }
-    std::cout << std::endl;
+    std::cout << " " << std::endl;
 }
 
 
