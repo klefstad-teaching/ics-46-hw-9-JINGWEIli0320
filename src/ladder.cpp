@@ -9,15 +9,15 @@
 
 
 void error(string word1, string word2, string msg) {
-    cerr << "Error: " << word1 << " -> " << word2 << ": " << msg << endl;
+    std::cerr << "Error: " << word1 << " -> " << word2 << ": " << msg << std::endl;
 }
 
 
-bool edit_distance_within(const string& str1, const string& str2, int d) {
+bool edit_distance_within(const std::string& str1, const std::string& str2, int d) {
     int n = str1.size(), m = str2.size();
     if (abs(n - m) > d)
         return false;
-    vector<vector<int>> dp(n + 1, vector<int>(m + 1, 0));
+    std::vector<std::vector<int>> dp(n + 1, std::vector<int>(m + 1, 0));
     for (int i = 0; i <= n; i++) {
         dp[i][0] = i;
     }
@@ -29,9 +29,9 @@ bool edit_distance_within(const string& str1, const string& str2, int d) {
             if (str1[i - 1] == str2[j - 1])
                 dp[i][j] = dp[i - 1][j - 1];
             else
-                dp[i][j] = 1 + min({ dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1] });
+                dp[i][j] = 1 + std::min({ dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1] });
         }
-        int rowMin = *min_element(dp[i].begin(), dp[i].end());
+        int rowMin = *std::min_element(dp[i].begin(), dp[i].end());
         if (rowMin > d)
             return false;
     }
@@ -39,26 +39,20 @@ bool edit_distance_within(const string& str1, const string& str2, int d) {
 }
 
 
-bool is_adjacent(const string& word1, const string& word2) {
-    if (word1 == word2)
-        return false;
-    if (word1.size() != word2.size())
-        return false;
-
-    int diff = 0;
-    for (size_t i = 0; i < word1.size(); i++) {
-        if (word1[i] != word2[i])
-            diff++;
-        if (diff > 1)
-            return false;
-    }
-    return diff == 1;
+bool is_adjacent(const std::string& word1, const std::string& word2) {
+    return edit_distance_within(word1, word2, 1);
 }
 
 
 vector<string> generate_word_ladder(const string& begin_word, const string& end_word, const set<string>& word_list) {
+
     if (begin_word == end_word)
-        return { begin_word };
+        return {};
+
+
+    set<string> words = word_list;
+    words.insert(begin_word);
+    words.insert(end_word);
 
     queue<vector<string>> q;
     set<string> visited;
@@ -66,19 +60,28 @@ vector<string> generate_word_ladder(const string& begin_word, const string& end_
     visited.insert(begin_word);
 
     while (!q.empty()) {
-        vector<string> path = q.front();
-        q.pop();
-        string last = path.back();
-
-        for (const auto& word : word_list) {
-            if (visited.find(word) == visited.end() && is_adjacent(last, word)) {
-                vector<string> new_path = path;
-                new_path.push_back(word);
-                if (word == end_word)
-                    return new_path;
-                q.push(new_path);
-                visited.insert(word);
+        int levelSize = q.size();
+        set<string> levelVisited;
+        for (int i = 0; i < levelSize; i++) {
+            vector<string> path = q.front();
+            q.pop();
+            string last = path.back();
+            if (last == end_word) {
+                return path;
             }
+
+            for (const auto& word : words) {
+                if (visited.find(word) == visited.end() && is_adjacent(last, word)) {
+                    vector<string> new_path = path;
+                    new_path.push_back(word);
+                    levelVisited.insert(word);
+                    q.push(new_path);
+                }
+            }
+        }
+
+        for (const auto& w : levelVisited) {
+            visited.insert(w);
         }
     }
     return {}; 
@@ -86,9 +89,9 @@ vector<string> generate_word_ladder(const string& begin_word, const string& end_
 
 
 void load_words(set<string>& word_list, const string& file_name) {
-    ifstream in(file_name);
+    std::ifstream in(file_name);
     if (!in) {
-        cerr << "Error: Unable to open file " << file_name << endl;
+        std::cerr << "Error: Unable to open file " << file_name << std::endl;
         return;
     }
     string word;
@@ -101,28 +104,28 @@ void load_words(set<string>& word_list, const string& file_name) {
 
 void print_word_ladder(const vector<string>& ladder) {
     if (ladder.empty()) {
-        cout << "No word ladder found." << endl;
+        std::cout << "No word ladder found." << std::endl;
         return;
     }
     for (size_t i = 0; i < ladder.size(); i++) {
-        cout << ladder[i];
+        std::cout << ladder[i];
         if (i != ladder.size() - 1)
-            cout << " -> ";
+            std::cout << " -> ";
     }
-    cout << endl;
+    std::cout << std::endl;
 }
 
 
 void verify_word_ladder() {
-    cout << "Enter the begin word: ";
+    std::cout << "Enter the begin word: ";
     string begin;
-    cin >> begin;
-    cout << "Enter the end word: ";
+    std::cin >> begin;
+    std::cout << "Enter the end word: ";
     string end;
-    cin >> end;
-    cout << "Enter the dictionary file name: ";
+    std::cin >> end;
+    std::cout << "Enter the dictionary file name: ";
     string filename;
-    cin >> filename;
+    std::cin >> filename;
     
     set<string> word_list;
     load_words(word_list, filename);
